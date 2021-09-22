@@ -1,0 +1,144 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "background": "white",
+  "padding": 5,
+  "width": 800,
+  "height": 500,
+  "title": {
+    "text": "Food Review Score and Price Range of NYC Restaurants",
+    "frame": "group"
+  },
+  "data": [
+    {
+      "name": "source_0",
+      "url": "https://raw.githubusercontent.com/awad1tc/FIT3179-HW9/main/data/Borough%20Boundaries.json",
+      "format": {
+        "type": "topojson",
+        "feature": "Borough Boundaries",
+        "parse": {}
+      },
+      "transform": [
+        {
+          "type": "formula",
+          "expr": "datum[\"properties\"] && datum[\"properties\"][\"boro_name\"]",
+          "as": "properties.boro_name"
+        }
+      ]
+    },
+    {
+      "name": "source_1",
+      "url": "https://raw.githubusercontent.com/awad1tc/FIT3179-HW9/main/data/restaurant_week_2018_final.csv",
+      "format": {"type": "csv", "delimiter": ","},
+      "transform": [
+        {
+          "type": "geojson",
+          "fields": ["longitude", "latitude"],
+          "signal": "layer_1_geojson_0"
+        },
+        {
+          "type": "geopoint",
+          "projection": "projection",
+          "fields": ["longitude", "latitude"],
+          "as": ["layer_1_x", "layer_1_y"]
+        },
+        {
+          "type": "filter",
+          "expr": "isValid(datum[\"food_review\"]) && isFinite(+datum[\"food_review\"])"
+        }
+      ]
+    }
+  ],
+  "projections": [
+    {
+      "name": "projection",
+      "size": {"signal": "[width, height]"},
+      "fit": {"signal": "[data('source_0'), layer_1_geojson_0]"},
+      "type": "identity"
+    }
+  ],
+  "marks": [
+    {
+      "name": "layer_0_marks",
+      "type": "shape",
+      "style": ["geoshape"],
+      "from": {"data": "source_0"},
+      "encode": {
+        "update": {
+          "fill": {"value": "whitesmoke"},
+          "stroke": {"value": "darkslategray"},
+          "tooltip": {
+            "signal": "{\"Borough\": isValid(datum[\"properties.boro_name\"]) ? datum[\"properties.boro_name\"] : \"\"+datum[\"properties.boro_name\"]}"
+          },
+          "ariaRoleDescription": {"value": "geoshape"},
+          "description": {
+            "signal": "\"Borough: \" + (isValid(datum[\"properties.boro_name\"]) ? datum[\"properties.boro_name\"] : \"\"+datum[\"properties.boro_name\"])"
+          }
+        }
+      },
+      "transform": [{"type": "geoshape", "projection": "projection"}]
+    },
+    {
+      "name": "layer_1_marks",
+      "type": "symbol",
+      "style": ["square"],
+      "from": {"data": "source_1"},
+      "encode": {
+        "update": {
+          "opacity": {"value": 0.7},
+          "size": {"scale": "size", "field": "food_review"},
+          "fill": {"scale": "color", "field": "price_range"},
+          "tooltip": {
+            "signal": "{\"Name\": isValid(datum[\"name\"]) ? datum[\"name\"] : \"\"+datum[\"name\"], \"Address\": isValid(datum[\"street_address\"]) ? datum[\"street_address\"] : \"\"+datum[\"street_address\"], \"Type\": isValid(datum[\"restaurant_type\"]) ? datum[\"restaurant_type\"] : \"\"+datum[\"restaurant_type\"], \"Food review\": format(datum[\"food_review\"], \"\"), \"Price range\": isValid(datum[\"price_range\"]) ? datum[\"price_range\"] : \"\"+datum[\"price_range\"]}"
+          },
+          "ariaRoleDescription": {"value": "square"},
+          "description": {
+            "signal": "\"longitude: \" + (format(datum[\"longitude\"], \"\")) + \"; latitude: \" + (format(datum[\"latitude\"], \"\")) + \"; Food review (out of 5): \" + (format(datum[\"food_review\"], \"\")) + \"; Price range: \" + (isValid(datum[\"price_range\"]) ? datum[\"price_range\"] : \"\"+datum[\"price_range\"]) + \"; Name: \" + (isValid(datum[\"name\"]) ? datum[\"name\"] : \"\"+datum[\"name\"]) + \"; Address: \" + (isValid(datum[\"street_address\"]) ? datum[\"street_address\"] : \"\"+datum[\"street_address\"]) + \"; Type: \" + (isValid(datum[\"restaurant_type\"]) ? datum[\"restaurant_type\"] : \"\"+datum[\"restaurant_type\"]) + \"; Food review: \" + (format(datum[\"food_review\"], \"\"))"
+          },
+          "x": {"field": "layer_1_x"},
+          "y": {"field": "layer_1_y"},
+          "shape": {"value": "square"}
+        }
+      }
+    }
+  ],
+  "scales": [
+    {
+      "name": "color",
+      "type": "ordinal",
+      "domain": {"data": "source_1", "field": "price_range", "sort": true},
+      "range": {"scheme": "category10"},
+      "interpolate": "hcl"
+    },
+    {
+      "name": "size",
+      "type": "linear",
+      "domain": [3.4, 5],
+      "range": [9, 361],
+      "zero": false
+    }
+  ],
+  "legends": [
+    {
+      "title": "Price range",
+      "fill": "color",
+      "symbolType": "square",
+      "encode": {"symbols": {"update": {"opacity": {"value": 0.7}}}}
+    },
+    {
+      "title": "Food review (out of 5)",
+      "size": "size",
+      "symbolType": "square",
+      "encode": {
+        "symbols": {
+          "update": {
+            "fill": {"value": "black"},
+            "fillOpacity": {"value": 0.7},
+            "opacity": {"value": 0.7},
+            "stroke": {"value": "transparent"}
+          }
+        }
+      }
+    }
+  ],
+  "config": {}
+}
